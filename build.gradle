@@ -1,0 +1,52 @@
+plugins {
+  id 'org.jetbrains.kotlin.jvm' version '2.1.10'
+  id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.10'
+  id 'java-gradle-plugin'
+  id 'maven-publish'  // Add this plugin to use publishing block
+}
+
+group = 'com.guidewire'
+version = '1.0-SNAPSHOT'
+
+gradlePlugin {
+  plugins {
+    create("fern-reporter-plugin") {
+      id = "com.guidewire.fern-reporter-plugin"
+      implementationClass = "com.guidewire.FernReporterPlugin"
+    }
+  }
+}
+
+publishing {
+//  publications {
+//    mavenJava(MavenPublication) {
+//      from components.java
+//    }
+//  }
+  repositories {
+    mavenLocal()
+  }
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+  implementation "com.google.code.gson:gson:2.10.1"
+  implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2'
+  testImplementation 'org.jetbrains.kotlin:kotlin-test'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+kotlin {
+  jvmToolchain(17)
+}
+
+//plugins {
+//  id 'fern-reporter-plugin'
+//}
