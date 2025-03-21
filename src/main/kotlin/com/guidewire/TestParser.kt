@@ -13,79 +13,84 @@ import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import javax.xml.parsers.DocumentBuilderFactory
 
-fun parseReports(testRun: TestRun, filePattern: String, tags: String, verbose: Boolean) {
-  val matcher = FileSystems.getDefault().getPathMatcher("glob:$filePattern")
-  val directoryPath = Path.of(File(filePattern).parent ?: ".")
-  val files = File(directoryPath.toString()).walkTopDown()
-    .filter { file -> matcher.matches(Path.of(file.absolutePath)) && file.isFile }
-    .toList()
+fun parseReports(testRun: TestRun, filePattern: String, tags: String, verbose: Boolean): Result<Unit> {
+  return runCatching {
+    val matcher = FileSystems.getDefault().getPathMatcher("glob:$filePattern")
+    val directoryPath = Path.of(File(filePattern).parent ?: ".")
+    val files = File(directoryPath.toString()).walkTopDown()
+      .filter { file -> matcher.matches(Path.of(file.absolutePath)) && file.isFile }
+      .toList()
 
-  require(files.isEmpty()) { "No files found for pattern $filePattern" }
+    require(files.isEmpty()) { "No files found for pattern $filePattern" }
 
-  files.forEach { file ->
-    val suiteRunsResult = parseReport(file.absolutePath, tags, verbose)
-    suiteRunsResult.forEach { suiteRun ->
-      testRun.suiteRuns.add(suiteRun)
-    }
-  }
-
-  testRun.suiteRuns.forEach { suiteRun ->
-    // Set testRun.startTime to the earliest suite start time
-    if (testRun.startTime == null || suiteRun.startTime.isBefore(testRun.startTime)) {
-      testRun.startTime = suiteRun.startTime
+    files.forEach { file ->
+      val suiteRunsResult = parseReport(file.absolutePath, tags, verbose)
+      suiteRunsResult.getOrThrow().forEach { suiteRun ->
+        testRun.suiteRuns.add(suiteRun)
+      }
     }
 
-    // Set testRun.endTime to the latest suite end time
-    if (testRun.endTime == null || suiteRun.endTime.isAfter(testRun.endTime)) {
-      testRun.endTime = suiteRun.endTime
-    }
-  }
+    testRun.suiteRuns.forEach { suiteRun ->
+      // Set testRun.startTime to the earliest suite start time
+      if (testRun.startTime == null || suiteRun.startTime.isBefore(testRun.startTime)) {
+        testRun.startTime = suiteRun.startTime
+      }
 
-  if (verbose) {
-    println("TestRun start time: ${testRun.startTime}")
-    println("TestRun end time: ${testRun.endTime}")
+      // Set testRun.endTime to the latest suite end time
+      if (testRun.endTime == null || suiteRun.endTime.isAfter(testRun.endTime)) {
+        testRun.endTime = suiteRun.endTime
+      }
+    }
+
+    if (verbose) {
+      println("TestRun start time: ${testRun.startTime}")
+      println("TestRun end time: ${testRun.endTime}")
+    }
   }
 }
 
-fun parseReport(filePath: String, tags: String, verbose: Boolean): List<SuiteRun> {
-  val suiteRuns = mutableListOf<SuiteRun>()
+fun parseReport(filePath: String, tags: String, verbose: Boolean): Result<List<SuiteRun>> {
+  return runCatching {
 
-  if (verbose) {
-    println("Reading $filePath")
-  }
+    val suiteRuns = mutableListOf<SuiteRun>()
 
-  val file = File(filePath)
-  val content = file.readText()
-
-  if (verbose) {
-    println("Parsing $filePath")
-  }
-
-  // Create XML document builder
-  val factory = DocumentBuilderFactory.newInstance()
-  val builder = factory.newDocumentBuilder()
-  val doc = builder.parse(InputSource(content.reader()))
-
-  val root = doc.documentElement
-  val testSuites = mutableListOf<TestSuite>()
-
-  // Check if root is testsuites or testsuite
-  if (root.tagName == "testsuites") {
-    val suiteElements = root.getElementsByTagName("testsuite")
-    for (i in 0 until suiteElements.length) {
-      val suiteElement = suiteElements.item(i) as Element
-      testSuites.add(parseTestSuiteElement(suiteElement))
+    if (verbose) {
+      println("Reading $filePath")
     }
-  } else if (root.tagName == "testsuite") {
-    testSuites.add(parseTestSuiteElement(root))
-  }
 
-  for (suite in testSuites) {
-    val run = parseTestSuite(suite, tags, verbose)
-    suiteRuns.add(run)
-  }
+    val file = File(filePath)
+    val content = file.readText()
 
-  return suiteRuns
+    if (verbose) {
+      println("Parsing $filePath")
+    }
+
+    // Create XML document builder
+    val factory = DocumentBuilderFactory.newInstance()
+    val builder = factory.newDocumentBuilder()
+    val doc = builder.parse(InputSource(content.reader()))
+
+    val root = doc.documentElement
+    val testSuites = mutableListOf<TestSuite>()
+
+    // Check if root is testsuites or testsuite
+    if (root.tagName == "testsuites") {
+      val suiteElements = root.getElementsByTagName("testsuite")
+      for (i in 0 until suiteElements.length) {
+        val suiteElement = suiteElements.item(i) as Element
+        testSuites.add(parseTestSuiteElement(suiteElement))
+      }
+    } else if (root.tagName == "testsuite") {
+      testSuites.add(parseTestSuiteElement(root))
+    }
+
+    for (suite in testSuites) {
+      val run = parseTestSuite(suite, tags, verbose).getOrThrow()
+      suiteRuns.add(run)
+    }
+
+    suiteRuns
+  }
 }
 
 private fun parseTestSuiteElement(element: Element): TestSuite {
@@ -128,29 +133,37 @@ private fun parseTestSuiteElement(element: Element): TestSuite {
   )
 }
 
-fun parseTestSuite(testSuite: TestSuite, tags: String, verbose: Boolean): SuiteRun {
-  if (verbose) {
-    println("Parsing TestSuite ${testSuite.name}")
-  }
-
-  val suiteRun = SuiteRun(suiteName = testSuite.name)
-
-  suiteRun.startTime = if (testSuite.timestamp.isEmpty()) {
-    GlobalClock.now()
-  } else {
-    try {
-      ZonedDateTime.parse(testSuite.timestamp, DateTimeFormatter.ISO_DATE_TIME)
-    } catch (e: DateTimeParseException) {
-      throw IllegalArgumentException("Failed to parse suite start time: ${e.message}")
+fun parseTestSuite(testSuite: TestSuite, tags: String, verbose: Boolean): Result<SuiteRun> {
+  return runCatching {
+    if (verbose) {
+      println("Parsing TestSuite ${testSuite.name}")
     }
+
+    val suiteRun = SuiteRun(suiteName = testSuite.name)
+
+    suiteRun.startTime = if (testSuite.timestamp.isEmpty()) {
+      GlobalClock.now()
+    } else {
+      try {
+        ZonedDateTime.parse(testSuite.timestamp, DateTimeFormatter.ISO_DATE_TIME)
+      } catch (e: DateTimeParseException) {
+        throw IllegalArgumentException("Failed to parse suite start time: ${e.message}")
+      }
+    }
+
+    suiteRun.endTime = getEndTime(suiteRun.startTime, testSuite.time).getOrThrow()
+
+    if (verbose) {
+      println("Resulting SuiteRun: $suiteRun")
+    }
+
+    parseTestCases(suiteRun, testSuite, verbose, tags)
+
+    suiteRun
   }
+}
 
-  suiteRun.endTime = getEndTime(suiteRun.startTime, testSuite.time)
-
-  if (verbose) {
-    println("Resulting SuiteRun: $suiteRun")
-  }
-
+private fun parseTestCases(suiteRun: SuiteRun, testSuite: TestSuite, verbose: Boolean, tags: String) {
   var startTime = suiteRun.startTime
   var endTime: ZonedDateTime
 
@@ -176,7 +189,7 @@ fun parseTestSuite(testSuite: TestSuite, tags: String, verbose: Boolean): SuiteR
       else -> ""
     }
 
-    endTime = getEndTime(startTime, testCase.time)
+    endTime = getEndTime(startTime, testCase.time).getOrThrow()
 
     val specRun = SpecRun(
       specDescription = testCase.name,
@@ -194,17 +207,17 @@ fun parseTestSuite(testSuite: TestSuite, tags: String, verbose: Boolean): SuiteR
       println("Resulting SpecRun: $specRun")
     }
   }
-
-  return suiteRun
 }
 
-fun getEndTime(startTime: ZonedDateTime, durationSeconds: String): ZonedDateTime {
-  val duration = durationSeconds.toDoubleOrNull()
-    ?: throw IllegalArgumentException("Invalid duration format: $durationSeconds")
+fun getEndTime(startTime: ZonedDateTime, durationSeconds: String): Result<ZonedDateTime> {
+  return runCatching {
+    val duration = durationSeconds.toDoubleOrNull()
+      ?: throw IllegalArgumentException("Invalid duration format: $durationSeconds")
 
-  val milliseconds = (duration * 1000).toLong()
-  startTime.plus(milliseconds, ChronoUnit.MILLIS)
-  return startTime
+    val milliseconds = (duration * 1000).toLong()
+    startTime.plus(milliseconds, ChronoUnit.MILLIS)
+    startTime
+  }
 }
 
 fun convertToTags(tagString: String): List<Tag> {

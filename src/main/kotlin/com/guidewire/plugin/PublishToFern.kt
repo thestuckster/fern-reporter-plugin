@@ -66,18 +66,20 @@ abstract class PublishToFern : DefaultTask() {
       }
 
       // Parse reports
-      try {
-        parseReports(testRun, reportPath, tagsString, isVerbose)
-        if (isVerbose) {
-          logger.debug("Successfully parsed reports from $reportPath")
+      parseReports(testRun, reportPath, tagsString, isVerbose).fold(
+        onSuccess = {
+          if (isVerbose) {
+            logger.debug("Successfully parsed reports from $reportPath")
+          }
+        },
+        onFailure = { error ->
+          logger.error("Failed to parse reports from $reportPath: ${error.message}")
+          if (isVerbose) {
+            logger.error("Stack trace: ", error)
+          }
+          return
         }
-      } catch (e: Exception) {
-        logger.error("Failed to parse reports from $reportPath: ${e.message}")
-        if (isVerbose) {
-          logger.error("Stack trace: ", e)
-        }
-        return
-      }
+      )
     }
 
     // Send the test run to Fern
