@@ -113,3 +113,24 @@ git clone https://github.com/your-org/fern-junit-publisher.git
 cd fern-junit-publisher
 ./gradlew build
 ```
+
+## Development 
+
+You can build and publish this plugin for use locally with the command 
+```bash
+./gradlew publishToMavenLocal
+```
+
+You should see the plugin in your local `.m2` repository. 
+
+From there you can set up a test project to use the plugin. Make sure to edit your `settings.gradle` file to use plugins
+found in your local m2 repository.
+
+```gradle
+pluginManagement {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+}
+```
