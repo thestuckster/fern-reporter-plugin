@@ -1,12 +1,14 @@
 package com.guidewire
 
 import com.guidewire.models.*
+import com.guidewire.util.GlobalClock
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
-import com.guidewire.util.GlobalClock
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -146,7 +148,8 @@ fun parseTestSuite(testSuite: TestSuite, tags: String, verbose: Boolean): Result
       GlobalClock.now()
     } else {
       try {
-        ZonedDateTime.parse(testSuite.timestamp, DateTimeFormatter.ISO_DATE_TIME)
+        val localDate = LocalDateTime.parse(testSuite.timestamp)
+        ZonedDateTime.parse(localDate.atZone(ZoneId.systemDefault()).toString(), DateTimeFormatter.ISO_DATE_TIME)
       } catch (e: DateTimeParseException) {
         throw IllegalArgumentException("Failed to parse suite start time: ${e.message}")
       }
