@@ -93,7 +93,7 @@ fernPublisher {
     fernUrl.set("https://fern.example.com")
     projectName.set("full-stack")
     reportPaths.set(listOf(
-        "build/test-results/**/*.xml",
+        "${project.buildDir}/test-results/test/**/*.xml",
         "frontend/build/test-results/*.xml"
     ))
     fernTags.set(listOf("ci", "nightly"))
