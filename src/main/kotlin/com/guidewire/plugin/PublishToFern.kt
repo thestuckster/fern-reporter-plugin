@@ -51,8 +51,7 @@ abstract class PublishToFern : DefaultTask() {
       return
     }
 
-    logger.lifecycle("Reading reports from: ${reportPaths.get().joinToString()}")
-
+    logger.lifecycle("Reading reports from: ${reportPaths.get().joinToString(":")}")
     // Create TestRun object
     val testRun = TestRun(
       testProjectName = projectName,

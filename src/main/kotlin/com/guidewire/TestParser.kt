@@ -21,7 +21,8 @@ fun parseReports(testRun: TestRun, filePattern: String, tags: String, verbose: B
       .filter { file -> matcher.matches(Path.of(file.absolutePath)) && file.isFile }
       .toList()
 
-    require(files.isEmpty()) { "No files found for pattern $filePattern" }
+    //Require throws when false
+    require(files.isNotEmpty()) { "No files found for pattern $filePattern" }
 
     files.forEach { file ->
       val suiteRunsResult = parseReport(file.absolutePath, tags, verbose)
