@@ -1,17 +1,21 @@
 package com.guidewire
 
 import com.guidewire.models.TestRun
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNamingStrategy
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+@OptIn(ExperimentalSerializationApi::class)
 fun sendTestRun(testRun: TestRun, fernUrl: String, verbose: Boolean): Result<Unit> {
   return runCatching {
     val json = Json {
       prettyPrint = true
       encodeDefaults = true
+      namingStrategy = JsonNamingStrategy.SnakeCase
     }
 
     val payload = json.encodeToString(testRun)
