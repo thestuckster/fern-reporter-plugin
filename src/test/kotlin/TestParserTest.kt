@@ -7,7 +7,6 @@ import com.guidewire.sendTestRun
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
 
@@ -44,11 +43,11 @@ class TestParserTest {
   }
 
   @Test
-  @Disabled
+//  @Disabled
   fun `sendTestRun should successfully send data`() {
     // Setup mock server
     stubFor(
-      post(urlEqualTo("/api/testrun"))
+      post(urlEqualTo("/api/testrun/"))
         .withHeader("Content-Type", equalTo("application/json"))
         .willReturn(
           aResponse()
@@ -63,17 +62,17 @@ class TestParserTest {
     // Verify
     assertTrue(result.isSuccess)
     verify(
-      postRequestedFor(urlEqualTo("/api/testrun"))
+      postRequestedFor(urlEqualTo("/api/testrun/"))
         .withHeader("Content-Type", equalTo("application/json"))
     )
   }
 
   @Test
-  @Disabled
+//  @Disabled
   fun `sendTestRun should handle server errors`() {
     // Setup mock server to return error
     stubFor(
-      post(urlEqualTo("/api/testrun"))
+      post(urlEqualTo("/api/testrun/"))
         .willReturn(
           aResponse()
             .withStatus(500)
@@ -91,7 +90,7 @@ class TestParserTest {
   }
 
   @Test
-  @Disabled
+//  @Disabled
   fun `sendTestRun should handle connection errors`() {
     // Test with non-existent server
     val result = sendTestRun(testRun, "http://non-existent-server:12345", false)

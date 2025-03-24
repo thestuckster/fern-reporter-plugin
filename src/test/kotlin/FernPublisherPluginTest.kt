@@ -61,7 +61,7 @@ class FernPublisherPluginTest {
   }
 
   @Test
-  @Disabled
+//  @Disabled
   fun `plugin should apply correctly to project`() {
     val project = ProjectBuilder.builder().build()
     project.plugins.apply("com.guidewire.fern-publisher")
@@ -70,7 +70,7 @@ class FernPublisherPluginTest {
   }
 
   @Test
-  @Disabled
+//  @Disabled
   fun `plugin extension should configure task properties`() {
     val project = ProjectBuilder.builder().build()
     project.plugins.apply("com.guidewire.fern-publisher")

@@ -1,5 +1,3 @@
-package client
-
 import com.guidewire.models.TestRun
 import com.guidewire.parseReports
 import com.guidewire.util.GlobalClock
@@ -7,12 +5,12 @@ import com.guidewire.util.MockClock
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 class DataSenderTest {
@@ -30,15 +28,13 @@ class DataSenderTest {
   }
 
   @Test
-  @Disabled
   fun `parseReports should handle empty file pattern`() {
-    val result = parseReports(testRun, "nonexistent/*.xml", "", false)
+    val result = parseReports(testRun, "nonexistent/*.xml", "", true)
     assertTrue(result.isFailure)
     assertTrue(result.exceptionOrNull()?.message?.contains("No files found") ?: false)
   }
 
   @Test
-  @Disabled
   fun `parseReports should correctly parse valid XML reports`() {
     // Create test XML file
     val xmlContent = """
@@ -54,7 +50,7 @@ class DataSenderTest {
     Files.write(testFile, xmlContent.toByteArray())
 
     // Parse the report
-    val result = parseReports(testRun, testFile.toString(), "tag1,tag2", false)
+    val result = parseReports(testRun, testFile.toString(), "tag1,tag2", true)
 
     assertTrue(result.isSuccess)
     assertEquals(1, testRun.suiteRuns.size)
@@ -68,7 +64,6 @@ class DataSenderTest {
   }
 
   @Test
-  @Disabled
   fun `parseReports should handle failed tests`() {
     val xmlContent = """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -83,7 +78,7 @@ class DataSenderTest {
     val testFile = tempDir.resolve("failed-report.xml")
     Files.write(testFile, xmlContent.toByteArray())
 
-    val result = parseReports(testRun, testFile.toString(), "", false)
+    val result = parseReports(testRun, testFile.toString(), "", true)
 
     assertTrue(result.isSuccess)
     assertEquals(1, testRun.suiteRuns.size)
@@ -94,7 +89,6 @@ class DataSenderTest {
   }
 
   @Test
-  @Disabled
   fun `parseReports should handle skipped tests`() {
     val xmlContent = """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -109,7 +103,7 @@ class DataSenderTest {
     val testFile = tempDir.resolve("skipped-report.xml")
     Files.write(testFile, xmlContent.toByteArray())
 
-    val result = parseReports(testRun, testFile.toString(), "", false)
+    val result = parseReports(testRun, testFile.toString(), "", true)
 
     assertTrue(result.isSuccess)
     assertEquals("passed", testRun.suiteRuns[0].specRuns[0].status)
@@ -117,7 +111,6 @@ class DataSenderTest {
   }
 
   @Test
-  @Disabled
   fun `parseReports should correctly calculate times`() {
     val xmlContent = """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -130,11 +123,11 @@ class DataSenderTest {
     val testFile = tempDir.resolve("time-report.xml")
     Files.write(testFile, xmlContent.toByteArray())
 
-    val result = parseReports(testRun, testFile.toString(), "", false)
+    val result = parseReports(testRun, testFile.toString(), "", true)
 
     assertTrue(result.isSuccess)
     val startTime = ZonedDateTime.parse("2023-01-01T09:00:00Z")
-    assertEquals(startTime, testRun.startTime)
-    assertEquals(startTime.plusSeconds(1).plus(500, ChronoUnit.MILLIS), testRun.endTime)
+    assertEquals(startTime.format(DateTimeFormatter.ISO_INSTANT), testRun.startTime?.format(DateTimeFormatter.ISO_INSTANT))
+    assertEquals(startTime.plusSeconds(1).plus(500, ChronoUnit.MILLIS).format(DateTimeFormatter.ISO_INSTANT), testRun.endTime?.format(DateTimeFormatter.ISO_INSTANT))
   }
 }

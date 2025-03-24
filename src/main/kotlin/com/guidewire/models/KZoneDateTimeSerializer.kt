@@ -7,10 +7,11 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 object KZoneDateTimeSerializer : KSerializer<ZonedDateTime> {
     override fun serialize(encoder: Encoder, value: ZonedDateTime) {
-        encoder.encodeString(value.toString())
+        encoder.encodeString(value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'XXX")))
     }
 
     override fun deserialize(decoder: Decoder): ZonedDateTime {

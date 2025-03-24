@@ -7,7 +7,6 @@ import org.xml.sax.InputSource
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -148,8 +147,7 @@ fun parseTestSuite(testSuite: TestSuite, tags: String, verbose: Boolean): Result
       GlobalClock.now()
     } else {
       try {
-        val localDate = LocalDateTime.parse(testSuite.timestamp)
-        ZonedDateTime.parse(localDate.atZone(ZoneId.systemDefault()).toString(), DateTimeFormatter.ISO_DATE_TIME)
+        ZonedDateTime.parse(testSuite.timestamp, DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC")))
       } catch (e: DateTimeParseException) {
         throw IllegalArgumentException("Failed to parse suite start time: ${e.message}")
       }
@@ -194,6 +192,7 @@ private fun parseTestCases(suiteRun: SuiteRun, testSuite: TestSuite, verbose: Bo
     }
 
     endTime = getEndTime(startTime, testCase.time).getOrThrow()
+    System.out.println(endTime.format(DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC"))))
 
     val specRun = SpecRun(
       specDescription = testCase.name,
@@ -220,7 +219,6 @@ fun getEndTime(startTime: ZonedDateTime, durationSeconds: String): Result<ZonedD
 
     val milliseconds = (duration * 1000).toLong()
     startTime.plus(milliseconds, ChronoUnit.MILLIS)
-    startTime
   }
 }
 
