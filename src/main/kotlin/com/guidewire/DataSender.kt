@@ -1,7 +1,6 @@
 package com.guidewire
 
 import com.guidewire.models.TestRun
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.URI
 import java.net.http.HttpClient
@@ -16,7 +15,6 @@ fun sendTestRun(testRun: TestRun, fernUrl: String, verbose: Boolean): Result<Uni
     }
 
     val payload = json.encodeToString(testRun)
-
     val endpoint = URI("$fernUrl/api/testrun").normalize()
 
     if (verbose) {

@@ -1,52 +1,51 @@
 plugins {
-  id 'org.jetbrains.kotlin.jvm' version '2.1.10'
-  id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.10'
-  id 'java-gradle-plugin'
-  id 'maven-publish'  // Add this plugin to use publishing block
+    id 'org.jetbrains.kotlin.jvm' version '2.1.20'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.1.20'
+    id 'java-gradle-plugin'
+    id 'maven-publish'  // Add this plugin to use publishing block
 }
 
 group = 'com.guidewire'
 version = '0.1.0'
 
 gradlePlugin {
-  plugins {
-    create("fernPublisher") {
-      id = "com.guidewire.fern-publisher"
-      implementationClass = "com.guidewire.plugin.FernPublisherPlugin"
+    plugins {
+        create("fernPublisher") {
+            id = "com.guidewire.fern-publisher"
+            implementationClass = "com.guidewire.plugin.FernPublisherPlugin"
+        }
     }
-  }
 }
 
 publishing {
-  repositories {
-    mavenLocal()
-  }
+    repositories {
+        mavenLocal()
+    }
 }
 
 repositories {
-  mavenLocal()
-  mavenCentral()
+    mavenLocal()
+    mavenCentral()
 }
 
 dependencies {
-  implementation "com.google.code.gson:gson:2.10.1"
-  implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2'
-  testImplementation 'org.jetbrains.kotlin:kotlin-test'
-  testImplementation "org.junit.jupiter:junit-jupiter:5.9.2"
-  testImplementation "org.wiremock:wiremock:3.12.1"
-  testImplementation(gradleTestKit())
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation "org.junit.jupiter:junit-jupiter:5.9.2"
+    testImplementation "org.wiremock:wiremock:3.12.1"
+    testImplementation(gradleTestKit())
 
-  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
 tasks.test {
-  useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 test {
-  useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 kotlin {
-  jvmToolchain(17)
+    jvmToolchain(17)
 }
