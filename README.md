@@ -1,3 +1,6 @@
+> [!CAUTION] 
+> Development of this project has been moved to [guidewire-oss/fern-junit-gradle-plugin](https://github.com/guidewire-oss/fern-junit-gradle-plugin)
+
 # Fern JUnit Publisher
 
 A Gradle plugin for publishing JUnit test results to a Fern test reporting instance.
